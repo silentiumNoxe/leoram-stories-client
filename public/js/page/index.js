@@ -292,7 +292,13 @@ class Sprite extends Node {
     }
 }
 
-window.app = {ready: false, scene: null};
+window.app = {ready: false, scene: null, sprites: {}};
+app.loadSprite = function (id, url) {
+    return fetch(url)
+        .then(x => x.blob())
+        .then(x => createImageBitmap(x, {resizeWidth: 64, resizeHeight: 64, resizeQuality: "high"}))
+        .then(x => app.sprites[id] = x);
+}
 
 window.addEventListener('DOMContentLoaded', function () {
     const $view = document.getElementById("view");
@@ -312,15 +318,20 @@ window.addEventListener('DOMContentLoaded', function () {
     window.app.scene = scene;
     window.app.ready = true;
 
-    window.dispatchEvent(new CustomEvent("app-ready"));
+    Promise.all([app.loadSprite("trees", "trees.png")])
+        .then(() => window.dispatchEvent(new CustomEvent("app-ready")));
 })
 
 window.addEventListener("app-ready", function () {
-    fetch("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTxz7qJ9pU6Xj2EJKaRDVz-9Bd0xh2LnMklGw&s")
-        .then(x => x.blob())
-        .then(x => createImageBitmap(x))
-        .then(x => window.app.scene.getLayer("ground").add(new Sprite({id: "sprite", pos: {x: 200, y: 100}, texture: x})))
+    const width = 64;
+    const s1 = new Sprite({id: "tree1", pos: {x: 100, y: 100}, texture: app.sprites["trees"]});
+    const s2 = new Sprite({id: "tree2", pos: {x: 100 + width, y: 100}, texture: app.sprites["trees"]});
+    const s3 = new Sprite({id: "tree2", pos: {x: 100 + width * 2, y: 100}, texture: app.sprites["trees"]});
 
+    const layer = app.scene.getLayer("top");
+    layer.add(s1);
+    layer.add(s2);
+    layer.add(s3);
 
     function frame() {
         app.scene.draw();
